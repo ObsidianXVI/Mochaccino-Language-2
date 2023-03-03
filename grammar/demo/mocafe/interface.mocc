@@ -1,0 +1,50 @@
+package interface;
+
+struct Interface {}
+
+module for Interface {
+    static func showOptions(options<InterfaceOptions>)<Void> native;
+    
+    static func showWelcomePage()<Void> native;
+
+    //#Deprecated Use showOptions instead to allow for multiple options
+    static func askForSelection(
+        req named drink<Icon>,
+        req named snack<Icon>,
+    ) {
+        throw "askForSelection is a deprecated method";
+    }
+}
+
+collection InterfaceOptions {
+    // a collection is an enhanced interface
+    req named key<Str>;
+    req named icon<Icon>;
+    // var ConstraintFn = Fn<None, Bool>;
+    var constraints<Arr<ConstraintFn>> = 
+        func keyDoesNotContainSpaces()<Bool> {
+            return keys.where((key<Str>) => key.contains(' ')).isEmpty;
+        };
+
+    schema {
+        var keys = +[key: icon];
+    }
+
+    // * [any named key: icon<Icon>]
+    // allows for:
+    // Interface.showOptions(
+    //    drink: Icon.drink
+    // );
+}
+
+collection InterfaceOptions {
+    schema {
+        * [req name<Str>, req icon<Icon>];
+    }
+
+    constraints {
+        func keyDoesNotContainSpaces()<Void> {
+            
+        }
+    }
+}

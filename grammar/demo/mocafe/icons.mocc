@@ -1,0 +1,13 @@
+package icons;
+
+struct Icon enum {
+    // variables can only be decalred this way inside containers
+    req pathToIcon<Str>;
+
+    prop drink('./icons/drink.ico');
+    prop snack('./icons/snack.ico');
+    prop latte('./icons/latte.ico');
+    prop cappuccino('./icons/cappuccino.ico');
+    prop mocha('./icons/mocha.ico');
+    prop espresso('./icons/espresso.ico');
+}

@@ -1,0 +1,9 @@
+package display;
+
+struct Display {
+    
+}
+
+module of Display {
+    func showOrderReady(orderId<OrderId>)<Void> native;
+}

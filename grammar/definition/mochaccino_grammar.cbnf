@@ -1,0 +1,200 @@
+use cbnf:1.0.0;
+
+##################
+# Keywords
+##################
+
+PACKAGE = "package";
+DOCK = "dock";
+INCLUDE = "include";
+REQ = "req";
+NAMED = "named";
+DEFINE = "define";
+STRUCT = "struct";
+MODULE = "module";
+COLLECTION = "module";
+EXTENDS = "extends";
+IMPLEMENTS = "implements";
+ABSTRACT = "abstract";
+STATIC = "static";
+ASYNC = "async";
+FUNC = "func";
+VAR = "var";
+RETURN = "return";
+GET = "get";
+SET = "set";
+PROP = "prop";
+ENUM = "enum";
+ELEM = "elem";
+THIS = "this";
+SUPER = "super";
+SCHEMA = "schema";
+IF = "if";
+ELSE = "else";
+FOR = "for";
+WHILE = "while";
+TRUE = "true";
+FALSE = "false";
+NULL = "null";
+
+##################
+# Generic
+##################
+
+program = {*}[declaration] @eof;
+declaration = decl.package
+            | decl.dock
+            | decl.struct
+            | decl.module
+            | decl.collection
+            | decl.statement
+;
+
+##################
+# Declaration
+##################
+
+decl.package = PACKAGE util.package_id ";";
+decl.dock = DOCK "{"
+                {*}[
+                    (stmt.import | stmt.include) 
+                    ";"
+                ]
+                "}"
+;
+decl.struct = STRUCT @identifier ((":" ELEM | ENUM) | ((EXTENDS | IMPLEMENTS) @identifier)) "{"
+                    {?}[
+                        decl.constructor
+                    ]
+                    {*}[
+                        decl.func
+                        | decl.prop
+                    ]
+                "}"
+;
+decl.module = {?}[ABSTRACT] MODULE @identifier {?}[(EXTENDS | IMPLEMENTS) @identifier] "{"
+                    {*}[definition]
+                    {*}[
+                        {?}[util.runtime_annotation]
+                        decl.func
+                    ]
+                "}"
+;
+decl.collection = COLLECTION @identifier {?}[(EXTENDS | IMPLEMENTS) @identifier] "{"
+                    {?}[expr.schema]
+                    {?}[decl.constraints]
+                "}"
+;
+decl.statement = stmt.expr
+                | stmt.for
+                | stmt.while
+                | stmt.if
+                | stmt.return
+                | stmt.block
+                | stmt.initializer.var
+;
+decl.constraints = CONSTRAINTS "{"
+                    {*}[decl.func]
+                "}"
+;
+decl.func = FUNC @identifier "("
+                    {?}[util.param {*}["," util.param]]
+                ")" {?}[ASYNC] (stmt.block | "=>" stmt.expr);
+
+decl.constructor = {*}[util.param ";"];
+decl.prop = PROP @identifier @type "{"
+                {?}[
+                    GET util.func_body
+                ]
+
+                {?}[
+                    SET util.func_body
+                ]
+            "}"
+;
+
+##################
+# Statements
+##################
+
+stmt.import = @string ";";
+stmt.include = INCLUDE util.package_id;
+stmt.initializer.constructor = {?}[REQ] {?}[NAMED] {?}[SUPER "."] @identifier {?}["=" expression] ";";
+stmt.initializer.var = VAR @identifier {?}[@type]
+                     (
+                        ";"
+                        | "=" expression
+                     )
+;
+stmt.expr = expression;
+stmt.for = FOR "("
+                (stmt.expr | stmt.initializer.var) ";"
+                {?}[expression] ";"
+                {?}[expression] ";"
+                ")" util.func_body
+;
+stmt.if = IF "(" expression ")" util.func_body {?}[ELSE decl.statement];
+stmt.return = RETURN {?}[expression] ";";
+stmt.while = WHILE "(" expression ")" util.func_body;
+stmt.block = "{" util.func_body "}";
+
+##################
+# Definitions
+##################
+
+definition = DEFINE (ENV | DEBUG | TEST) @identifier
+    "{"
+        {*}[
+            decl.struct
+            | decl.module
+            | decl.collection
+            | decl.statement
+        ]
+    "}"
+;
+
+##################
+# Expressions
+##################
+
+expression = expr.literal
+            | expr.unary
+            | expr.binary
+            | expr.grouping
+;
+expr.literal = @double
+            | @string
+            | TRUE
+            | FALSE
+            | NULL
+;
+expr.grouping = "(" expression ")";
+expr.unary = ("-" | "!") expression;
+expr.binary = expr.equality;
+expr.equality = expr.logical {*}[op.equality expr.logical];
+expr.logical = expr.comparative {*}[op.logical expr.comparative];
+expr.comparative = expr.binary {*}[op.comparative expr.binary];
+expr.binary = expr.factor;
+expr.factor = expr.unary;
+expr.unary = {?}["-" | "!"] expr.value;
+expr.value = expr.literal | @identifier;
+op.equality = "==" | "!=";
+op.comparative = ">" | ">=" | "<" | "<=";
+op.logical = "||" | "&&";
+
+expr.schema = SCHEMA "{"
+                {?}[util.param]
+                {*}["," util.param]
+            "}"
+;
+
+##################
+# Utility
+##################
+util.package_id = @identifier {*}["." @identifier];
+util.func_body = {*}[decl.statement];
+util.runtime_annotation = "@" @identifier {?}[":" @identifier];
+util.param = {?}[REQ] {?}[NAMED] @identifier
+                ((@type) | (":" expr.schema))
+                 (("=" expression) | (";"))
+;

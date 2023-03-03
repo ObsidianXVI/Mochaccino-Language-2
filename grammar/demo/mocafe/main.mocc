@@ -1,0 +1,72 @@
+package main;
+
+dock {
+    Math;
+    include order_manager;
+    include coffee_machine;
+    include interface;
+    include display;
+    include items;
+    include icons;
+}
+
+module Main of Program {
+    func main(args<Arr<Str>>)<Void> {
+        Global.addProperty<Bool>(active, true);
+        ProcessManager.startup();
+    }
+}
+
+module ProcessManager of Global {
+    // methods of modules attached to Global don't need to be static
+    // as an instance of the Global object is exposed at runtime
+    // other modules need to use the static keyword to achieve the same behaviour
+
+    func startup()<Void> {
+        Interface.addTapListener(
+            onTap: handleEvent,
+        );
+        Interface.showWelcomePage();
+    }
+
+    func handleEvent()<Void> {
+        var selection<Drink | Snack> = Inteface.showOptions(
+            "drink": Icon.drink,
+            "snack": Icon.snack
+        );
+
+        // type refinement in action
+        var itemSelection<Drink | Snack>;
+        if (selection.type == Drink) {
+            itemSelection = Interface.showOptions(
+                "mocha": Icon.mocha,
+                "espresso": Icon.espresso,
+                "latte": Icon.latte,
+                "cappuccino": Icon.cappuccino
+            );
+        } else {
+            // This is how we scam them into buying our coffee
+            itemSelection = Interface.showDialog(
+                "Sorry, we're out of snacks! Try our coffee instead!"
+                onDismissed: Interface.showWelcomePage()
+            );
+            return;
+        }
+        // force type conversion
+        assert itemSelection is Drink;
+        OrderManager.enqueueOrder(itemSelection);
+        Interface.showWelcomePage()
+    }
+}
+
+/***/
+
+abstract module Foo {
+    func sumTing()<Void>;
+}
+
+use Foo on Global {
+    func sumTing()<Void> {
+        // ...
+    }
+}

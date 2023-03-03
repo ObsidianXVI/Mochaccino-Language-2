@@ -1,0 +1,18 @@
+package items;
+
+struct Drink {
+    req name<Str>;
+
+
+    prop id<Str> {
+        get {
+            return "123";
+        }
+
+        set {
+            id  = _id;
+        }
+    }
+}
+
+struct Snack {}

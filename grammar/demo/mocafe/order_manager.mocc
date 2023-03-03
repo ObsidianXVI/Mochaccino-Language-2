@@ -1,0 +1,37 @@
+package order_manager;
+
+dock {
+    Collections;
+    Math;
+}
+
+// This is struct polymorphism
+struct OrderId extends Elementary<Str> {
+    func init()<Void> {
+        super.init(Str.concat("#", Math.randomInt(100, 999).toString()));
+    }
+}
+
+struct OrderManager {
+    var orders<Queue<Order> = ();
+}
+
+module of OrderManager {
+    func queueOrder(drink<Drink>)<OrderId> {
+        var order<Order> = drink;
+        orders.enqueue(order);
+        return order.orderId;
+    }
+
+    func dequeueOrder()<Order> {
+        return orders.dequeue();
+    }
+}
+
+struct Order {
+    var orderId<OrderId> = ();
+    req drink<Drink>;
+
+    // only need init() body if working with parameters that are not
+    // struct fields
+}

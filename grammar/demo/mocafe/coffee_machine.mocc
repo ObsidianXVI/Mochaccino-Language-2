@@ -1,0 +1,18 @@
+package coffee_machine;
+
+struct CoffeeMachine {
+}
+
+module of CoffeeMachine {
+    func startService()<Void> {
+        while (active) {
+            if (OrderManager.orders.isNotEmpty) {
+                var order<Order> = OrderManager.dequeueOrder();
+                handleOrder(order);
+                Display.showOrderReady(order.orderId);
+            }
+        }
+    }
+
+    func handleOrder(order<Order>)<Void> native;
+}
